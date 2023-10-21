@@ -1,25 +1,39 @@
 package hello.jdbc.repository;
 
+import com.zaxxer.hikari.HikariDataSource;
+import hello.jdbc.connection.ConnectionConst;
 import hello.jdbc.domain.Member;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.sql.SQLException;
 import java.util.NoSuchElementException;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @Slf4j
-class MemberRepositoryV0Test {
+class MemberRepositoryV1Test {
 
-    MemberRepositoryV0 repository = new MemberRepositoryV0();
+    MemberRepositoryV1 repository;
+
+    @BeforeEach
+    void beforeEach(){
+        //기본 DriverManager - 항상 새로운 커넥션을 획득 ->성능이 느림
+//        DriverManagerDataSource dataSource = new DriverManagerDataSource(ConnectionConst.URL, ConnectionConst.USERNAME, ConnectionConst.PASSWORD);
+        //커넥션 풀링
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(ConnectionConst.URL);
+        dataSource.setUsername(ConnectionConst.USERNAME);
+        dataSource.setPassword(ConnectionConst.PASSWORD);
+        repository = new MemberRepositoryV1(dataSource);
+    }
 
     @Test
     void crud() throws SQLException {
 
         //save
-        Member member = new Member("memberV100", 10000);
+        Member member = new Member("memberV101", 10000);
         repository.save(member);
 
         //findById
@@ -40,6 +54,11 @@ class MemberRepositoryV0Test {
             Member deleteMember = repository.findById(member.getMemberId());
         }).isInstanceOf(NoSuchElementException.class);
 
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

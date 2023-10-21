@@ -28,14 +28,32 @@ public class ConnectionTest {
     }
 
     @Test
-    void dataSourceConnectionPool(){
+    void dataSourceConnectionPool() throws SQLException, InterruptedException {
         //커넥션 풀링
         HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(ConnectionConst.URL);
+        dataSource.setUsername(ConnectionConst.USERNAME);
+        dataSource.setPassword(ConnectionConst.PASSWORD);
+        dataSource.setMaximumPoolSize(10);
+        dataSource.setPoolName("MyPool");
+
+        useDataSource(dataSource);
+        //POOL 추가를 보기 위해 sleep
+        Thread.sleep(1000);
     }
 
     private void useDataSource(DataSource dataSource) throws SQLException {
         Connection con1 = dataSource.getConnection();
         Connection con2 = dataSource.getConnection();
+//        Connection con3 = dataSource.getConnection();
+//        Connection con4 = dataSource.getConnection();
+//        Connection con5 = dataSource.getConnection();
+//        Connection con6 = dataSource.getConnection();
+//        Connection con7 = dataSource.getConnection();
+//        Connection con8 = dataSource.getConnection();
+//        Connection con9 = dataSource.getConnection();
+//        Connection con10 = dataSource.getConnection();
+//        Connection con11 = dataSource.getConnection(); //POOL 확보가 될때까지 Block
         log.info("connection={}, class={}",con1, con1.getClass());
         log.info("connection={}, class={}",con2, con2.getClass());
     }
