@@ -6,42 +6,78 @@ import hello.jdbc.repository.MemberRepositoryV3;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import javax.sql.DataSource;
 import java.sql.SQLException;
 
 /**
- * 트랜잭션 - 트랜잭션 템플릿
+ * 트랜잭션 - DataSource, TransactionManager 자동등록
  */
 @Slf4j
-class MemberServiceV3_2Test {
+@SpringBootTest
+class MemberServiceV3_4Test {
 
     public static final String MEMBER_A = "memberA";
     public static final String MEMBER_B = "memberB";
     public static final String MEMBER_EX = "ex";
 
+    @Autowired
     private MemberRepositoryV3 memberRepository;
-    private MemberServiceV3_2 memberService;
+    @Autowired
+    private MemberServiceV3_3 memberService;
 
-    @BeforeEach
+    @TestConfiguration
+    static class TestConfig{
+        //application.properties의 설정값으로 SpringBoot가 자동생성
+        private final DataSource dataSource;
+
+        public TestConfig(DataSource dataSource) {
+            this.dataSource = dataSource;
+        }
+
+        @Bean
+        MemberRepositoryV3 memberRepositoryV3(){
+            return new MemberRepositoryV3(dataSource);
+        }
+
+        @Bean
+        MemberServiceV3_3 memberServiceV3_3(){
+            return new MemberServiceV3_3(memberRepositoryV3());
+        }
+    }
+
+    //Spring Container에 Bean을 등록하여 사용하지 않으면 롤백이 되지 않음
+/*    @BeforeEach
     void before() {
         DriverManagerDataSource dataSource
                 = new DriverManagerDataSource(ConnectionConst.URL, ConnectionConst.USERNAME, ConnectionConst.PASSWORD);
         memberRepository = new MemberRepositoryV3(dataSource);
-        PlatformTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
-        memberService = new MemberServiceV3_2(transactionManager, memberRepository);
-    }
+        memberService = new MemberServiceV3_3(memberRepository);
+    }*/
 
     @AfterEach
     void after() throws SQLException {
         memberRepository.delete(MEMBER_A);
         memberRepository.delete(MEMBER_B);
         memberRepository.delete(MEMBER_EX);
+    }
+
+    @Test
+    void AopCheck(){
+        log.info("memberService class={}", memberService.getClass());
+        log.info("memberRepository class={}", memberRepository.getClass());
+        Assertions.assertThat(AopUtils.isAopProxy(memberService)).isTrue();
+        Assertions.assertThat(AopUtils.isAopProxy(memberRepository)).isFalse();
     }
 
     @Test
